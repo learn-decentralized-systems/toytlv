@@ -2,6 +2,8 @@ package toytlv
 
 import (
 	"github.com/stretchr/testify/assert"
+	"io"
+	"os"
 	"testing"
 )
 
@@ -42,4 +44,57 @@ func TestFeedHeader(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, uint8('A'), lit)
 	assert.Equal(t, text, string(body))
+}
+
+func TestTLVReader_ReadRecord(t *testing.T) {
+	const K = 1000
+	const L = 512
+	_ = os.Remove("tlv")
+	file, err := os.OpenFile("tlv", os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.ModePerm)
+	assert.Nil(t, err)
+	writer := TLVWriter{
+		Writer: file,
+	}
+	var lo [L]byte
+	for i := 0; i < L; i++ {
+		lo[i] = byte(i)
+	}
+	var sho = [1]byte{'A'}
+	for i := 0; i < K; i++ {
+		err = writer.WriteRecord('L', lo[:])
+		assert.Nil(t, err)
+		err = writer.WriteRecord('S', sho[:])
+		assert.Nil(t, err)
+	}
+	err = writer.Flush()
+	assert.Nil(t, err)
+	info, err := file.Stat()
+	assert.Nil(t, err)
+	assert.Equal(t, int64((2+1)*K+(5+len(lo))*K), info.Size())
+
+	file2, err := os.Open("tlv")
+	assert.Nil(t, err)
+	reader := TLVReader{
+		Reader: file2,
+	}
+	for i := 0; i < K; i++ {
+
+		lit, body, err := reader.ReadRecord()
+		assert.Nil(t, err)
+		assert.Equal(t, byte('L'), lit)
+		assert.Equal(t, lo[:], body)
+
+		lit, body, err = reader.ReadRecord()
+		assert.Nil(t, err)
+		assert.Equal(t, byte('S'), lit)
+		assert.Equal(t, sho[:], body)
+
+	}
+
+	lit, body, err := reader.ReadRecord()
+	assert.Equal(t, io.EOF, err)
+	assert.Equal(t, byte(0), lit)
+	assert.Equal(t, 0, len(body))
+
+	_ = os.Remove("tlv")
 }

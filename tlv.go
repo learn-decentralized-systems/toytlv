@@ -18,7 +18,7 @@ func TLVlit(lit byte) bool {
 }
 
 var ErrIncomplete = errors.New("incomplete data")
-var BadRecord = errors.New("bad record format")
+var ErrBadRecord = errors.New("bad TLV record format")
 
 // Takes a TLV record from the slice
 func Drain(data *[]byte) (lit byte, body []byte, err error) {
@@ -43,7 +43,7 @@ func Drain(data *[]byte) (lit byte, body []byte, err error) {
 		}
 		reclen := binary.LittleEndian.Uint32((*data)[1:5])
 		if reclen > 1<<30 {
-			err = BadRecord
+			err = ErrBadRecord
 		} else if len(*data) < 5+int(reclen) {
 			err = ErrIncomplete
 		} else {
@@ -51,7 +51,7 @@ func Drain(data *[]byte) (lit byte, body []byte, err error) {
 			*data = (*data)[5+reclen:]
 		}
 	} else {
-		err = BadRecord
+		err = ErrBadRecord
 	}
 	return
 }
@@ -75,7 +75,7 @@ func Feed(data *[]byte, lit byte, body []byte) {
 
 func TLVAppend2(data []byte, lit byte, body1, body2 []byte) (newdata []byte, err error) {
 	if !TLVLongLit(lit) {
-		return nil, BadRecord
+		return nil, ErrBadRecord
 	}
 	blen := len(body1) + len(body2)
 	i := [4]byte{}
