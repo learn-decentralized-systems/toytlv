@@ -248,6 +248,9 @@ func (tcp *TCPConn) doWrite() {
 		}
 		tcp.outmx.Lock()
 		tcp.out = tcp.out[n:]
+		if len(tcp.out) == 0 && cap(tcp.out) < 512 {
+			tcp.out = make([]byte, 0, 4096) // gc the old buf
+		}
 		tcp.outmx.Unlock()
 		conn = tcp.conn
 	}
