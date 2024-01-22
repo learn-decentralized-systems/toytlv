@@ -1,53 +1,61 @@
 package toytlv
 
 import (
+	"github.com/learn-decentralized-systems/toylog/toyqueue"
+	"github.com/stretchr/testify/assert"
+	"net"
 	"sync"
 	"testing"
 )
-import "github.com/stretchr/testify/assert"
 
 // 1. create a server, create a client, echo
 // 2. create a server, client, connect, disconn, reconnect
 // 3. create a server, client, conn, stop the serv, relaunch, reconnect
 
-type Record struct {
-	lit  byte
-	body []byte
-	addr string
-}
-
 type TestConsumer struct {
-	rcvd []Record
+	rcvd toyqueue.Records
 	mx   sync.Mutex
 	co   sync.Cond
 }
 
-func (c *TestConsumer) Consume(lit byte, body []byte, address string) error {
+func (c *TestConsumer) Drain(recs toyqueue.Records) error {
 	c.mx.Lock()
-	c.rcvd = append(c.rcvd, Record{lit, body, address})
+	c.rcvd = append(c.rcvd, recs...)
 	c.co.Signal()
 	c.mx.Unlock()
 	return nil
 }
 
-func (c *TestConsumer) WaitDrain() (rec Record) {
+func (c *TestConsumer) Feed() (recs toyqueue.Records, err error) {
 	c.mx.Lock()
 	if len(c.rcvd) == 0 {
 		c.co.Wait()
 	}
-	rec = c.rcvd[0]
-	c.rcvd = c.rcvd[1:]
+	recs = c.rcvd
+	c.rcvd = c.rcvd[len(c.rcvd):]
 	c.mx.Unlock()
-	return rec
+	return
+}
+
+func (c *TestConsumer) Close() error {
+	return nil
 }
 
 func TestTCPDepot_Connect(t *testing.T) {
+
+	loop := "127.0.0.1:1234"
+
 	tc := TestConsumer{}
 	tc.co.L = &tc.mx
 	depot := TCPDepot{}
-	depot.Open(&tc)
-
-	loop := "127.0.0.1:1234"
+	addr := ""
+	depot.Open(func(conn net.Conn) toyqueue.FeederDrainerCloser {
+		a := conn.RemoteAddr().String()
+		if a != loop {
+			addr = a
+		}
+		return &tc
+	})
 
 	err := depot.Listen(loop)
 	assert.Nil(t, err)
@@ -56,15 +64,23 @@ func TestTCPDepot_Connect(t *testing.T) {
 	assert.Nil(t, err)
 
 	// send a record
-	err = depot.Feed('M', []byte("Hi there"), loop)
-	rec := tc.WaitDrain()
-	assert.Equal(t, uint8('M'), rec.lit)
-	assert.Equal(t, "Hi there", string(rec.body))
+	recsto := toyqueue.Records{Record('M', []byte("Hi there"))}
+	err = depot.DrainTo(recsto, loop)
+	rec, err := tc.Feed()
+	lit, body, rest := TakeAny(rec[0])
+	assert.Equal(t, uint8('M'), lit)
+	assert.Equal(t, "Hi there", string(body))
+	assert.Equal(t, 0, len(rest))
 
 	// respond to that
-	err = depot.Feed('M', []byte("Re: Hi there"), rec.addr)
-	rerec := tc.WaitDrain()
-	assert.Equal(t, uint8('M'), rerec.lit)
-	assert.Equal(t, "Re: Hi there", string(rerec.body))
+	recsback := toyqueue.Records{Record('M', []byte("Re: Hi there"))}
+	err = depot.DrainTo(recsback, addr)
+	rerec, err := tc.Feed()
+	relit, rebody, rerest := TakeAny(rerec[0])
+	assert.Equal(t, uint8('M'), relit)
+	assert.Equal(t, "Re: Hi there", string(rebody))
+	assert.Equal(t, 0, len(rerest))
+
+	depot.Close()
 
 }
