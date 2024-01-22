@@ -3,7 +3,7 @@ package toytlv
 import (
 	"errors"
 	"fmt"
-	"github.com/learn-decentralized-systems/toylog/toyqueue"
+	"github.com/learn-decentralized-systems/toyqueue"
 	"io"
 	"net"
 	"os"

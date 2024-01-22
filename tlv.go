@@ -3,7 +3,7 @@ package toytlv
 import (
 	"encoding/binary"
 	"errors"
-	"github.com/learn-decentralized-systems/toylog/toyqueue"
+	"github.com/learn-decentralized-systems/toyqueue"
 )
 
 const CaseBit uint8 = 'a' - 'A'

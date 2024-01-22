@@ -1,7 +1,7 @@
 package toytlv
 
 import (
-	"github.com/learn-decentralized-systems/toylog/toyqueue"
+	"github.com/learn-decentralized-systems/toyqueue"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"sync"
