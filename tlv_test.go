@@ -52,7 +52,7 @@ func TestTLVReader_ReadRecord(t *testing.T) {
 	_ = os.Remove("tlv")
 	file, err := os.OpenFile("tlv", os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.ModePerm)
 	assert.Nil(t, err)
-	writer := TLVWriter{
+	writer := Drainer{
 		Writer: file,
 	}
 	var lo [L]byte
@@ -61,12 +61,14 @@ func TestTLVReader_ReadRecord(t *testing.T) {
 	}
 	var sho = [1]byte{'A'}
 	for i := 0; i < K; i++ {
-		err = writer.WriteRecord('L', lo[:])
-		assert.Nil(t, err)
-		err = writer.WriteRecord('S', sho[:])
+		err = writer.Drain(
+			Join(
+				Record('L', lo[:]),
+				Record('S', sho[:]),
+			),
+		)
 		assert.Nil(t, err)
 	}
-	err = writer.Flush()
 	assert.Nil(t, err)
 	info, err := file.Stat()
 	assert.Nil(t, err)
@@ -75,27 +77,33 @@ func TestTLVReader_ReadRecord(t *testing.T) {
 
 	file2, err := os.Open("tlv")
 	assert.Nil(t, err)
-	reader := TLVReader{
+	reader := Feeder{
 		Reader: file2,
 	}
-	for i := 0; i < K; i++ {
+	i := 0
+	for i < K*2 {
 
-		lit, body, err := reader.ReadRecord()
+		recs, err := reader.Feed()
 		assert.Nil(t, err)
-		assert.Equal(t, byte('L'), lit)
-		assert.Equal(t, lo[:], body)
-
-		lit, body, err = reader.ReadRecord()
-		assert.Nil(t, err)
-		assert.Equal(t, byte('S'), lit)
-		assert.Equal(t, sho[:], body)
+		for _, rec := range recs {
+			lit, body, rest, err := TakeAnyWary(rec)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, len(rest))
+			if (i & 1) == 0 {
+				assert.Equal(t, byte('L'), lit)
+				assert.Equal(t, lo[:], body)
+			} else {
+				assert.Equal(t, byte('S'), lit)
+				assert.Equal(t, sho[:], body)
+			}
+			i++
+		}
 
 	}
 
-	lit, body, err := reader.ReadRecord()
+	recs, err := reader.Feed()
 	assert.Equal(t, io.EOF, err)
-	assert.Equal(t, byte(0), lit)
-	assert.Equal(t, 0, len(body))
+	assert.Equal(t, 0, len(recs))
 
 	_ = os.Remove("tlv")
 }

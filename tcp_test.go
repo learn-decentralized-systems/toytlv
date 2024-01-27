@@ -43,7 +43,7 @@ func (c *TestConsumer) Close() error {
 
 func TestTCPDepot_Connect(t *testing.T) {
 
-	loop := "127.0.0.1:1234"
+	loop := "127.0.0.1:12345"
 
 	tc := TestConsumer{}
 	tc.co.L = &tc.mx

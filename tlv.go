@@ -216,6 +216,20 @@ func Record(lit byte, body ...[]byte) []byte {
 	return ret
 }
 
+func Join(records ...[]byte) (ret toyqueue.Records) {
+	for _, rec := range records {
+		ret = append(ret, rec)
+	}
+	return
+}
+
+func Records(lit byte, bodies ...[]byte) (recs toyqueue.Records) {
+	for _, body := range bodies {
+		recs = append(recs, Record(lit, body))
+	}
+	return
+}
+
 func Concat(msg ...[]byte) []byte {
 	total := TotalLen(msg)
 	ret := make([]byte, 0, total)
