@@ -17,14 +17,14 @@ type TCPConn struct {
 	depot     *TCPDepot
 	addr      string
 	conn      net.Conn
-	inout     toyqueue.FeederDrainerCloser
+	inout     toyqueue.FeedDrainCloser
 	wake      *sync.Cond
 	outmx     sync.Mutex
 	Reconnect bool
 	KeepAlive bool
 }
 
-type Jack func(conn net.Conn) toyqueue.FeederDrainerCloser
+type Jack func(conn net.Conn) toyqueue.FeedDrainCloser
 
 // A TCP server/client for the use case of real-time async communication.
 // Differently from the case of request-response (like HTTP), we do not

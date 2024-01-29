@@ -49,7 +49,7 @@ func TestTCPDepot_Connect(t *testing.T) {
 	tc.co.L = &tc.mx
 	depot := TCPDepot{}
 	addr := ""
-	depot.Open(func(conn net.Conn) toyqueue.FeederDrainerCloser {
+	depot.Open(func(conn net.Conn) toyqueue.FeedDrainCloser {
 		a := conn.RemoteAddr().String()
 		if a != loop {
 			addr = a
