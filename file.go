@@ -148,6 +148,7 @@ func (ff *fileFeeder) Seek(offset int64, whence int) (int64, error) {
 	default:
 		return -1, os.ErrInvalid
 	}
+	ff.rest = nil
 	return ff.pos, nil
 }
 

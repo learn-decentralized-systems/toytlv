@@ -3,6 +3,7 @@ package toytlv
 import (
 	"github.com/learn-decentralized-systems/toyqueue"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"os"
 	"testing"
 )
@@ -34,6 +35,15 @@ func TestFile(t *testing.T) {
 	recs, err = feed.Feed()
 	assert.Equal(t, 0, len(recs))
 	assert.Equal(t, ErrBadRecord, err)
+
+	pos, err := feed.Seek(6, io.SeekStart)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(6), pos)
+	recs, err = feed.Feed()
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(recs))
+	assert.Equal(t, 10, len(recs[0]))
+	assert.Equal(t, 14, len(recs[1]))
 
 	_ = os.Remove("tmp")
 }
