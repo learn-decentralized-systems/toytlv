@@ -54,7 +54,9 @@ func Split(data []byte) (recs toyqueue.Records, rest []byte, err error) {
 	for len(rest) > 0 {
 		lit, hlen, blen := ProbeHeader(rest)
 		if lit == '-' {
-			err = ErrBadRecord
+			if len(recs) == 0 {
+				err = ErrBadRecord
+			}
 			return
 		}
 		if lit == 0 {

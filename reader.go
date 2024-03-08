@@ -8,22 +8,22 @@ import (
 // Feeder reads TLV records from an io.Reader stream.
 // Note that Feeder is buffered, i.e. it reads ahead.
 // When doing Seek() on a file, recreate Feeder, that is cheap.
-type Feeder struct {
+type Reader2Feeder struct {
 	pre    []byte
 	Reader io.Reader
 }
 
-type FeedSeeker struct {
+type ReadSeeker2FeedSeeker struct {
 	pre    []byte
 	Reader io.ReadSeeker
 }
 
-type FeedCloser struct {
+type ReadCloser2FeedCloser struct {
 	pre    []byte
-	Reader io.ReadSeekCloser
+	Reader io.ReadCloser
 }
 
-type FeedSeekCloser struct {
+type ReadSeekCloser2FeedSeekCloser struct {
 	pre    []byte
 	Reader io.ReadSeekCloser
 }
@@ -32,42 +32,42 @@ const DefaultPreBufLength = 4096
 const MinRecommendedRead = 512
 const MinRecommendedWrite = 400
 
-func (fs *FeedSeeker) Seek(offset int64, whence int) (int64, error) {
+func (fs *ReadSeeker2FeedSeeker) Seek(offset int64, whence int) (int64, error) {
 	fs.pre = nil
 	return fs.Reader.Seek(offset, whence)
 }
 
-func (fs *FeedSeekCloser) Seek(offset int64, whence int) (int64, error) {
+func (fs *ReadSeekCloser2FeedSeekCloser) Seek(offset int64, whence int) (int64, error) {
 	fs.pre = nil
 	return fs.Reader.Seek(offset, whence)
 }
 
-func (fs *FeedCloser) Close() error {
+func (fs *ReadCloser2FeedCloser) Close() error {
 	fs.pre = nil
 	return fs.Reader.Close()
 }
 
-func (fs *FeedSeekCloser) Close() error {
+func (fs *ReadSeekCloser2FeedSeekCloser) Close() error {
 	fs.pre = nil
 	return fs.Reader.Close()
 }
 
-func (fs *Feeder) Feed() (recs toyqueue.Records, err error) {
+func (fs *Reader2Feeder) Feed() (recs toyqueue.Records, err error) {
 	fs.pre, recs, err = feed(fs.pre, fs.Reader)
 	return
 }
 
-func (fs *FeedSeeker) Feed() (recs toyqueue.Records, err error) {
+func (fs *ReadSeeker2FeedSeeker) Feed() (recs toyqueue.Records, err error) {
 	fs.pre, recs, err = feed(fs.pre, fs.Reader)
 	return
 }
 
-func (fs *FeedCloser) Feed() (recs toyqueue.Records, err error) {
+func (fs *ReadCloser2FeedCloser) Feed() (recs toyqueue.Records, err error) {
 	fs.pre, recs, err = feed(fs.pre, fs.Reader)
 	return
 }
 
-func (fs *FeedSeekCloser) Feed() (recs toyqueue.Records, err error) {
+func (fs *ReadSeekCloser2FeedSeekCloser) Feed() (recs toyqueue.Records, err error) {
 	fs.pre, recs, err = feed(fs.pre, fs.Reader)
 	return
 }
@@ -127,11 +127,11 @@ func feed(past []byte, reader io.Reader) (rest []byte, tlv toyqueue.Records, err
 	return
 }
 
-type Drainer struct {
+type Writer2Drainer struct {
 	Writer io.Writer
 }
 
-type DrainCloser struct {
+type WritCloser2DrainCloser struct {
 	Writer io.WriteCloser
 }
 
@@ -148,7 +148,7 @@ func next(rest []byte, more toyqueue.Records) (cur []byte, left toyqueue.Records
 }
 
 // Having no writev() we do the next best thing: bundle writes
-func (d *Drainer) Drain(recs toyqueue.Records) error {
+func (d *Writer2Drainer) Drain(recs toyqueue.Records) error {
 	var cur []byte
 	for len(cur) > 0 || len(recs) > 0 {
 		cur, recs = next(cur, recs)
@@ -162,7 +162,7 @@ func (d *Drainer) Drain(recs toyqueue.Records) error {
 }
 
 // Having no writev() we do the next best thing: bundle writes
-func (d *DrainCloser) Drain(recs toyqueue.Records) error {
+func (d *WritCloser2DrainCloser) Drain(recs toyqueue.Records) error {
 	var cur []byte
 	for len(cur) > 0 || len(recs) > 0 {
 		cur, recs = next(cur, recs)
@@ -175,6 +175,6 @@ func (d *DrainCloser) Drain(recs toyqueue.Records) error {
 	return nil
 }
 
-func (dc *DrainCloser) Close() error {
+func (dc *WritCloser2DrainCloser) Close() error {
 	return dc.Writer.Close()
 }

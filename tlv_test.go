@@ -52,7 +52,7 @@ func TestTLVReader_ReadRecord(t *testing.T) {
 	_ = os.Remove("tlv")
 	file, err := os.OpenFile("tlv", os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.ModePerm)
 	assert.Nil(t, err)
-	writer := Drainer{
+	writer := Writer2Drainer{
 		Writer: file,
 	}
 	var lo [L]byte
@@ -77,7 +77,7 @@ func TestTLVReader_ReadRecord(t *testing.T) {
 
 	file2, err := os.Open("tlv")
 	assert.Nil(t, err)
-	reader := Feeder{
+	reader := Reader2Feeder{
 		Reader: file2,
 	}
 	i := 0

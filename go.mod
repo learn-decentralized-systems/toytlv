@@ -3,8 +3,9 @@ module github.com/learn-decentralized-systems/toytlv
 go 1.21.4
 
 require (
-	github.com/learn-decentralized-systems/toyqueue v0.1.1
+	github.com/learn-decentralized-systems/toyqueue v0.1.2
 	github.com/stretchr/testify v1.8.4
+	golang.org/x/sys v0.18.0
 )
 
 require (
