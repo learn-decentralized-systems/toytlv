@@ -124,9 +124,20 @@ func (ff *fileDrainer) Close() error {
 	return nil
 }
 
+// can return empty recs if e.g. there is a laaarge incomplete incoming record
+// On EoF returns err==io.EOF
 func (ff *fileFeeder) Feed() (recs toyqueue.Records, err error) {
 	fdr := fdReader{fd: ff.file.fd, pos: ff.pos}
-	ff.rest, err = ReadBuf(ff.rest, &fdr)
+	more := 512 // min disk sector
+	if len(ff.rest) > 0 {
+		// here we trust the file that it will not DDoS us with 2GB headers
+		// can not do the same with the network
+		inc := Incomplete(ff.rest)
+		if inc > more {
+			more = inc
+		}
+	}
+	ff.rest, err = AppendRead(ff.rest, &fdr, more)
 	if err == nil {
 		ff.pos = fdr.pos
 		recs, ff.rest, err = Split(ff.rest)

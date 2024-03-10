@@ -49,6 +49,43 @@ func ProbeHeader(data []byte) (lit byte, hdrlen, bodylen int) {
 	return
 }
 
+// Incomplete returns the number of supposedly yet-unread bytes.
+// 0 for complete, -1 for bad format,
+// >0 for least-necessary read to complete either header or record.
+func Incomplete(data []byte) int {
+	if len(data) == 0 {
+		return 1 // get something
+	}
+	dlit := data[0]
+	bodylen := 1
+	if dlit >= '0' && dlit <= '9' { // tiny
+		bodylen = int(dlit - '0')
+	} else if dlit >= 'a' && dlit <= 'z' { // short
+		if len(data) < 2 {
+			bodylen = 2
+		} else {
+			bodylen = int(data[1]) + 2
+		}
+	} else if dlit >= 'A' && dlit <= 'Z' { // long
+		if len(data) < 5 {
+			bodylen = 5
+		} else {
+			bl := binary.LittleEndian.Uint32(data[1:5])
+			if bl > 0x7fffffff {
+				return -1
+			}
+			bodylen = int(bl) + 5
+		}
+	} else {
+		return -1
+	}
+	if bodylen > len(data) {
+		return bodylen - len(data)
+	} else {
+		return 0
+	}
+}
+
 func Split(data []byte) (recs toyqueue.Records, rest []byte, err error) {
 	rest = data
 	for len(rest) > 0 {
@@ -61,6 +98,9 @@ func Split(data []byte) (recs toyqueue.Records, rest []byte, err error) {
 		}
 		if lit == 0 {
 			return
+		}
+		if hlen+blen > len(rest) {
+			break
 		}
 		recs = append(recs, rest[:hlen+blen])
 		rest = rest[hlen+blen:]
