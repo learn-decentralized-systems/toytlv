@@ -26,12 +26,12 @@ type fileDrainer struct {
 }
 
 // Feeder, thread-unsafe, for this file. Very cheap.
-func (f *File) Feeder() (feeder toyqueue.FeedSeekCloser, err error) {
-	return &fileFeeder{file: f}, nil
+func (f *File) Feeder() toyqueue.FeedSeekCloser {
+	return &fileFeeder{file: f}
 }
 
-func (f *File) Drainer() (feeder toyqueue.DrainSeekCloser, err error) {
-	return &fileDrainer{file: f}, nil
+func (f *File) Drainer() toyqueue.DrainSeekCloser {
+	return &fileDrainer{file: f}
 }
 
 func (file *File) Open(path string, mode int, perm uint32) (err error) {
@@ -73,6 +73,14 @@ func (f *File) fdesc() int {
 		return -1
 	}
 	return f.fd
+}
+
+func (f *File) Sync() (err error) {
+	if f.fd == -1 {
+		return os.ErrClosed
+	}
+	err = unix.Fsync(f.fd)
+	return
 }
 
 func (f *File) Close() (err error) {
