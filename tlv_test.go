@@ -107,3 +107,9 @@ func TestTLVReader_ReadRecord(t *testing.T) {
 
 	_ = os.Remove("tlv")
 }
+
+func TestTinyRecord(t *testing.T) {
+	body := "12"
+	tiny := TinyRecord('X', []byte(body))
+	assert.Equal(t, "212", string(tiny))
+}

@@ -247,7 +247,7 @@ func Append(into []byte, lit byte, body ...[]byte) (res []byte) {
 	return res
 }
 
-// Record composes a record of a given type; mainly for debugging.
+// Record composes a record of a given type
 func Record(lit byte, body ...[]byte) []byte {
 	total := TotalLen(body)
 	ret := make([]byte, 0, total+5)
@@ -256,6 +256,20 @@ func Record(lit byte, body ...[]byte) []byte {
 		ret = append(ret, b...)
 	}
 	return ret
+}
+
+func AppendTiny(into []byte, lit byte, body []byte) (res []byte) {
+	if len(body) > 9 {
+		return Append(into, lit, body)
+	}
+	res = append(into, '0'+byte(len(body)))
+	res = append(res, body...)
+	return
+}
+
+func TinyRecord(lit byte, body []byte) (tiny []byte) {
+	var data [10]byte
+	return AppendTiny(data[:0], lit, body)
 }
 
 func Join(records ...[]byte) (ret toyqueue.Records) {
