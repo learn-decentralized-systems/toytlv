@@ -5,10 +5,11 @@ binary protocols. You may ask, why not Protobuf? The answer is,
 Protobuf is a TLV protocol, as almost every other binary
 protocol out there. ToyTLV is a bare-bones TLV, nothing else.
 
-This lib implements a really simple TLV where every record type
-is a letter (A-Z), while the length is either 8- or 32-bit. The
-body of a record has arbitrary structure, ToyTLV mandates
-nothing in this regard. Hint: nesting TLV records is trivial.
+This lib implements a really simple TLV where every record
+*type* is a letter (A-Z), while the *length* is either 8- or
+32-bit. The *value* of a record has arbitrary structure, ToyTLV
+mandates nothing in this regard. Hint: nesting TLV records is
+trivial.
 
 More formally, a ToyTLV record can go in 3 forms:
 
